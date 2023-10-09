@@ -11,28 +11,43 @@ public class TestFactory {
     //Chess Functions
     //------------------------------------------------------------------------------------------------------------------
     public static ChessBoard getNewBoard(){
-        // FIXME
-		return null;
+        // Create and return an instance of your ChessBoard implementation (e.g., MyBoard)
+		return new MyBoard();
     }
 
     public static ChessGame getNewGame(){
-        // FIXME
-		return null;
+        // Create and return an instance of your ChessGame implementation (e.g., MyGame)
+		return new MyGame();
     }
 
     public static ChessPiece getNewPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type){
-        // FIXME
-		return null;
+        // Create and return an instance of your ChessPiece implementation (e.g., MyKing, MyQueen, etc.)
+        switch (type) {
+            case KING:
+                return new MyKing(pieceColor);
+            case QUEEN:
+                return new MyQueen(pieceColor);
+            case BISHOP:
+                return new MyBishop(pieceColor);
+            case ROOK:
+                return new MyRook(pieceColor);
+            case PAWN:
+                return new MyPawn(pieceColor);
+            case KNIGHT:
+                return new MyKnight(pieceColor);
+            default:
+                throw new IllegalArgumentException("Invalid piece type: " + type);
+        }
     }
 
     public static ChessPosition getNewPosition(Integer row, Integer col){
-        // FIXME
-		return null;
+        // Create and return an instance of your ChessPosition implementation (e.g., MyPosition)
+		return new MyPosition(row,col);
     }
 
     public static ChessMove getNewMove(ChessPosition startPosition, ChessPosition endPosition, ChessPiece.PieceType promotionPiece){
-        // FIXME
-		return null;
+        // Create and return an instance of your ChessMove implementation (e.g., MyMove)
+		return new MyMove(startPosition,endPosition,promotionPiece);
     }
     //------------------------------------------------------------------------------------------------------------------
 
