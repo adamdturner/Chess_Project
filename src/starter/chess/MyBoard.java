@@ -13,7 +13,9 @@ public class MyBoard implements ChessBoard {
     public MyBoard() {
         // Initialize the board in the constructor
         board = new ChessPiece[8][8];
-        resetBoard(); // Set up the default starting board
+        // turns out that we don't want to reset the board when initializing
+        // a new board because that will fail the piece move tests.
+        // When creating a board it should start out entirely empty
     }
 
     // Adds a chess piece to the chessboard
@@ -57,16 +59,16 @@ public class MyBoard implements ChessBoard {
 
         // White pieces (bottom two rows)
         for (int col = 0; col < 8; col++) {
-            board[0][col] = new MyPawn(ChessGame.TeamColor.WHITE);
+            board[1][col] = new MyPawn(ChessGame.TeamColor.WHITE);
         }
-        board[1][0] = new MyRook(ChessGame.TeamColor.WHITE);
-        board[1][1] = new MyKnight(ChessGame.TeamColor.WHITE);
-        board[1][2] = new MyBishop(ChessGame.TeamColor.WHITE);
-        board[1][3] = new MyQueen(ChessGame.TeamColor.WHITE);
-        board[1][4] = new MyKing(ChessGame.TeamColor.WHITE);
-        board[1][5] = new MyBishop(ChessGame.TeamColor.WHITE);
-        board[1][6] = new MyKnight(ChessGame.TeamColor.WHITE);
-        board[1][7] = new MyRook(ChessGame.TeamColor.WHITE);
+        board[0][0] = new MyRook(ChessGame.TeamColor.WHITE);
+        board[0][1] = new MyKnight(ChessGame.TeamColor.WHITE);
+        board[0][2] = new MyBishop(ChessGame.TeamColor.WHITE);
+        board[0][3] = new MyQueen(ChessGame.TeamColor.WHITE);
+        board[0][4] = new MyKing(ChessGame.TeamColor.WHITE);
+        board[0][5] = new MyBishop(ChessGame.TeamColor.WHITE);
+        board[0][6] = new MyKnight(ChessGame.TeamColor.WHITE);
+        board[0][7] = new MyRook(ChessGame.TeamColor.WHITE);
 
         // Black pieces (top two rows)
         for (int col = 0; col < 8; col++) {

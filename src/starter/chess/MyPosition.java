@@ -1,5 +1,7 @@
 package chess;
 
+import java.util.Objects;
+
 public class MyPosition implements ChessPosition {
 
     // This represents a location on the chessboard.
@@ -28,5 +30,20 @@ public class MyPosition implements ChessPosition {
     @Override
     public int getColumn() {
         return column;
+    }
+
+    // use intelliJ to override the .equals() and .hashCode() methods using the generate command
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        MyPosition that = (MyPosition) object;
+        return row == that.row && column == that.column;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(row, column);
     }
 }
