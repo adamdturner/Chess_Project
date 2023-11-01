@@ -2,12 +2,7 @@ package services;
 
 
 import dao.DAOInterface;
-import models.AuthToken;
-import models.Game;
-import models.User;
-import results.ErrorResult;
-import results.Result;
-import results.SuccessResult;
+import dataAccess.DataAccessException;
 
 
 /**
@@ -29,26 +24,14 @@ public class ClearApplicationService {
         this.database = database;
     }
 
-    //Clear application
-    //property:	                value:
-    //Description	            Clears the database. Removes all users, games, and authTokens.
-    //URL path	                /db
-    //HTTP Method	            DELETE
-    //Success response	        [200]
-    //Failure response	        [500] { "message": "Error: description" }
 
     /** HTTP Method: DELETE
      * Clears the database. Removes all users, games and authTokens
      * No need to pass in any parameter or return anything, the function
-     * will use the private data member called data which is the database
+     * will use the private data member database
      */
-    public Result clearDatabase() {
-        try {
-            database.ClearAll();
-            return new SuccessResult();
-        } catch (Exception e) {
-            return new ErrorResult("Error: " + e.getMessage());
-        }
+    public void ClearDatabase() throws DataAccessException {
+        database.ClearAll();
     }
 
 }

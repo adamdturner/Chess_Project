@@ -4,27 +4,41 @@ import dao.DAOInterface;
 import dao.MainMemoryDAO;
 import handlers.AuthenticationHandler;
 import handlers.ClearApplicationHandler;
+import handlers.GameHandler;
 import handlers.UserHandler;
 import services.AuthenticationService;
 import services.ClearApplicationService;
 
+import services.GameService;
 import services.UserService;
-import spark.Spark;
-import static spark.Spark.delete;
-import static spark.Spark.post;
+import spark.*;
 
 
 public class MyServer {
-    private final DAOInterface database;
-    private final ClearApplicationService clearService;
-    private final ClearApplicationHandler clearHandler;
+    final DAOInterface database;    // database
+    final ClearApplicationService clearService; // clear
+    final ClearApplicationHandler clearHandler;
 
-    private final UserService userService;
-    private final UserHandler userHandler;
+    final UserService userService;  // register
+    final UserHandler userHandler;
 
-    private final AuthenticationHandler authHandler;
-    private final AuthenticationService authService;
+    final AuthenticationHandler authHandler;    // login / logout
+    final AuthenticationService authService;
 
+    final GameHandler gameHandler;
+    final GameService gameService;
+
+    public MyServer(DAOInterface database) {
+        this.database = database;
+        clearService = new ClearApplicationService(database);
+        clearHandler = new ClearApplicationHandler(clearService);
+        userService = new UserService(database);
+        userHandler = new UserHandler(userService);
+        authService = new AuthenticationService(database);
+        authHandler = new AuthenticationHandler(authService);
+        gameService = new GameService(database);
+        gameHandler = new GameHandler(gameService);
+    }
 
     public static void main(String[] args) throws Exception {
         // Switch the DAO by uncommenting/commenting the desired line:
@@ -32,25 +46,19 @@ public class MyServer {
         new MyServer(new MainMemoryDAO()).run(8080);
     }
 
-    public MyServer(DAOInterface database) {
-        this.database = database;
-        this.clearService = new ClearApplicationService(database);
-        this.clearHandler = new ClearApplicationHandler(clearService);
-        this.userService = new UserService(database);
-        this.userHandler = new UserHandler(userService);
-        this.authService = new AuthenticationService(database);
-        this.authHandler = new AuthenticationHandler(database);
-    }
 
     public void run(int port) {
-        // Initialize your web server here, set port, etc.
-        // Register the clearHandler to handle specific HTTP requests.
+        // Initialize web server here, set port, etc.
+        // Register the handlers to handle specific HTTP requests.
 
         Spark.port(port);
-        delete("/db", clearHandler::handleClearRequest);
-        post("/user",userHandler::handleRegisterRequest);
-        //post("/session", authHandler::handleLoginRequest);
-        //delete("/session", authHandler::handleLogoutRequest);
+        Spark.delete("/db", clearHandler::handle);    // handle clear request
+        Spark.post("/user",userHandler::handle);  // handle register request
+        Spark.post("/session", authHandler::handle);  // handle login request
+        Spark.delete("/session", authHandler::handle);   // handle logout request
+        Spark.get("/game", gameHandler::handle); // handle list game request
+        Spark.post("/game", gameHandler::handle);  // handle create game request
+        Spark.put("/game", gameHandler::handle); // handle join game request
 
         System.out.printf("Running server on port %d\n", port);
     }

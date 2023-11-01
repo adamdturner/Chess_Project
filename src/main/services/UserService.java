@@ -1,13 +1,8 @@
 package services;
 
 import dao.DAOInterface;
-import dataAccess.DataAccessException;
-import models.AuthToken;
-import models.User;
 import requests.RegisterRequest;
-import results.ErrorResult;
-import results.Result;
-import results.SuccessResult;
+import results.UserAuthResult;
 
 /**
  * Service class used to implement the register endpoint
@@ -35,23 +30,27 @@ public class UserService {
      * @param request
      * @return the authentication token of the new user
      */
-    public Result register(RegisterRequest request) throws DataAccessException {
-        User user = database.GetUser(request.getUsername());
+    public UserAuthResult register(RegisterRequest request) {
+        try {
+            if (database.GetUser(request.username()) != null) {
+                // User already exists
+                return null;
+            }
 
-        // Check if user already exists
-        if (user != null) {
-            return new ErrorResult("Error: already taken");
+            // Here, you would typically hash the password before saving it
+            models.User newUser = new models.User(request.username(), request.password(), request.email());
+            database.AddUser(newUser);
+
+            // Create and store an authentication token for the new user
+            // Assuming CreateAuthToken method is implemented and returns a new token for the given user
+            models.AuthToken token = database.CreateAuthToken(newUser.username());
+
+            return new UserAuthResult(newUser.username(), token.authToken());
+
+        } catch (Exception e) {
+            // Logging the error might be a good idea here
+            throw new RuntimeException("Failed to register the user: " + e.getMessage());
         }
-
-        // Create a new user and save to database
-        User newUser = new User(request.getUsername(), request.getPassword(), request.getEmail());
-        database.AddUser(newUser);
-
-        // Generate an authToken for the user
-        // This next line both creates the authtoken and adds it to the database at the same time
-        AuthToken authToken = database.CreateAuthToken(request.getUsername());
-
-        return new SuccessResult(newUser.username(), authToken.authToken());
     }
 
 }

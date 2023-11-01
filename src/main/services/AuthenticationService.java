@@ -1,13 +1,10 @@
 package services;
 
 import dao.DAOInterface;
-import dataAccess.DataAccessException;
 import models.AuthToken;
 import models.User;
 import requests.LoginRequest;
-import results.ErrorResult;
-import results.Result;
-import results.SuccessResult;
+import results.UserAuthResult;
 
 /**
  * Service class used to implement the login and logout endpoints
@@ -41,19 +38,23 @@ public class AuthenticationService {
     /** HTTP Method: POST
      * A method for carrying out the login request of the specified user
      * logs in an existing user
-     * @param username,password
+     * @param request
      * @return a SuccessResult with a message, authToken and username or return an ErrorResult
      */
-    public Result login(String username, String password) throws DataAccessException {
-        User user = database.GetUser(username);
+    public UserAuthResult login(LoginRequest request) {
+        try {
+            User user = database.GetUser(request.username());
 
-        if (user != null && user.password().equals(password)) {
-            // Generate an authToken (this can be any method you like, for now, just creating a simple one
-            AuthToken authToken = database.CreateAuthToken(username);
+            // If user exists and password matches
+            if (user != null && user.password().equals(request.password())) {
+                // Generate a new authentication token
+                AuthToken token = database.CreateAuthToken(user.username());
+                return new UserAuthResult(user.username(), token.authToken());
+            }
 
-            return new SuccessResult(authToken.authToken(), username);
-        } else {
-            return new ErrorResult("Error: unauthorized");
+            return null;
+        } catch (Exception e) {
+            throw new RuntimeException("Login failed: " + e.getMessage());
         }
     }
 
@@ -73,14 +74,18 @@ public class AuthenticationService {
      * logs out the user represented by the authToken
      * @param authToken
      */
-    public Result logout(String authToken) throws DataAccessException {
-        AuthToken token = database.FindAuthToken(authToken);
+    public boolean logout(String authToken) {
+        try {
+            AuthToken token = database.GetAuthToken(authToken);
 
-        if (token != null) {
-            database.DeleteAuthToken(authToken);
-            return new SuccessResult();
-        } else {
-            return new ErrorResult("Error: unauthorized");
+            if (token != null) {
+                database.DeleteAuthToken(authToken);
+                return true;
+            }
+
+            return false;
+        } catch (Exception e) {
+            throw new RuntimeException("Logout failed: " + e.getMessage());
         }
     }
 

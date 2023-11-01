@@ -1,4 +1,4 @@
 package results;
 
-public class UserAuthResult {
+public record UserAuthResult(String username, String authToken) {
 }

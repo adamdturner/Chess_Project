@@ -1,43 +1,48 @@
 package handlers;
 
 import com.google.gson.Gson;
-import dataAccess.DataAccessException;
 import requests.RegisterRequest;
 import results.ErrorResult;
-import results.Result;
-import results.SuccessResult;
+import results.UserAuthResult;
 import services.UserService;
 import spark.Request;
 import spark.Response;
+import spark.Route;
 
-public class UserHandler {
+public class UserHandler implements Route {
+
     private final UserService userService;
+    private final Gson gson = new Gson();
 
     public UserHandler(UserService userService) {
         this.userService = userService;
     }
 
-    public Result handleRegisterRequest(Request req, Response res) throws DataAccessException {
-        // Parse the request body to get RegisterRequest object
-        RegisterRequest request = new Gson().fromJson(req.body(), RegisterRequest.class);
+    public Object handle(Request request, Response response) {
+        try {
+            RegisterRequest regRequest = gson.fromJson(request.body(), RegisterRequest.class);
 
-        // Call the UserService to handle the registration
-        Result result = userService.register(request);
-
-        if (result instanceof SuccessResult) {
-            res.status(200);
-
-        } else if (result instanceof ErrorResult) {
-            ErrorResult error = (ErrorResult) result;
-            if ("Error: already taken".equals(error.getMessage())) {
-                res.status(403);
-            } else if ("Error: bad request".equals(error.getMessage())) {
-                res.status(400);
-            } else {
-                res.status(500);
+            // Check if username, password, or email are missing or empty
+            if (regRequest.username() == null || regRequest.username().trim().isEmpty() ||
+                    regRequest.password() == null || regRequest.password().trim().isEmpty() ||
+                    regRequest.email() == null || regRequest.email().trim().isEmpty()) {
+                response.status(400);
+                return gson.toJson(new ErrorResult("Error: bad request"));
             }
+
+            UserAuthResult result = userService.register(regRequest);
+
+            if (result != null) {
+                response.status(200);
+                return gson.toJson(result);
+            } else {
+                response.status(403);
+                return gson.toJson(new ErrorResult("Error: already taken"));
+            }
+
+        } catch (Exception e) {
+            response.status(500);
+            return gson.toJson(new ErrorResult("Error: " + e.getMessage()));
         }
-        return result;
     }
 }
-

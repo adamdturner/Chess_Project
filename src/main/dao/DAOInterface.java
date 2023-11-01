@@ -77,10 +77,10 @@ public interface DAOInterface {
     /** Delete:
      * A method to delete the given user
      *
-     * @param user
+     * @param username
      * @throws DataAccessException
      */
-    void DeleteUser(User user) throws DataAccessException;
+    void DeleteUser(String username) throws DataAccessException;
 
 
 
@@ -125,10 +125,10 @@ public interface DAOInterface {
     /** Delete:
      * A method for deleting a given game
      *
-     * @param g
+     * @param gameID
      * @throws DataAccessException
      */
-    void DeleteGame(Game g) throws DataAccessException;
+    void DeleteGame(int gameID) throws DataAccessException;
 
 
 
@@ -154,7 +154,7 @@ public interface DAOInterface {
      * @return the token if it exists else return null
      * @throws DataAccessException
      */
-    AuthToken FindAuthToken(String authToken) throws DataAccessException;
+    AuthToken GetAuthToken(String authToken) throws DataAccessException;
 
     /** Delete:
      * A method to delete the token indicated by the authToken string parameter

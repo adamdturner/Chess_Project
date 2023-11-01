@@ -1,27 +1,31 @@
 package handlers;
 
+import com.google.gson.Gson;
 import results.ErrorResult;
-import results.Result;
+import results.SuccessResult;
 import services.ClearApplicationService;
 import spark.Request;
 import spark.Response;
+import spark.Route;
 
-public class ClearApplicationHandler {
+public class ClearApplicationHandler implements Route {
+
     private final ClearApplicationService clearService;
+    private final Gson gson = new Gson();
 
     public ClearApplicationHandler(ClearApplicationService clearService) {
         this.clearService = clearService;
     }
 
-    public Result handleClearRequest(Request req, Response res) {
+    @Override
+    public Object handle(Request request, Response response) {
         try {
-            Result result = clearService.clearDatabase();
-            res.status(200);
-            return result;
+            clearService.ClearDatabase();
+            return gson.toJson(new SuccessResult(true));
         } catch (Exception e) {
-            Result error = new ErrorResult("Error: " + e.getMessage());
-            res.status(500);
-            return error;
+            response.status(500);
+            return gson.toJson(new ErrorResult("Error: " + e.getMessage()));
         }
     }
+
 }
