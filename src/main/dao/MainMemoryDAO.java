@@ -7,10 +7,7 @@ import models.AuthToken;
 import models.Game;
 import models.User;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /** Provide all data storage and retrieval operations needed by the server.
  * MainMemoryDAO will store the server’s data in main memory (RAM)
@@ -21,6 +18,7 @@ public class MainMemoryDAO implements DAOInterface {
     private final Map<String, User> users = new HashMap<>();      // map of users which can be found by their username
     private final Map<String, AuthToken> tokens = new HashMap<>();    // map of tokens associated with a String authToken
     private final Map<Integer, Game> games = new HashMap<>();     // map of games associated by their gameID
+    private final Map<Integer, List<String>> observers = new HashMap<>(); // map of observers with int gameID and list of usernames
 
     private int currentID;
     private int currentTokenNum;
@@ -35,8 +33,8 @@ public class MainMemoryDAO implements DAOInterface {
         users.clear();
         tokens.clear();
         games.clear();
-//        currentID = 1000;                 fixme not sure if I need to reset ID's when doing clear
-//        currentTokenNum = 1000;
+        currentID = 1000;
+        currentTokenNum = 1000;
     }
 
     @Override
@@ -50,13 +48,17 @@ public class MainMemoryDAO implements DAOInterface {
     }
 
     @Override
-    public void SetWhitePlayer(String username) throws DataAccessException {        //fixme
-
+    public void SetWhitePlayer(int gameID, String username) throws DataAccessException {
+        Game oldGame = games.get(gameID);
+        Game newGame = new Game(oldGame.gameID(), username, oldGame.blackUsername(), oldGame.gameName(), oldGame.game());
+        games.put(gameID, newGame);
     }
 
     @Override
-    public void SetBlackPlayer(String username) throws DataAccessException {        //fixme
-
+    public void SetBlackPlayer(int gameID, String username) throws DataAccessException {
+        Game oldGame = games.get(gameID);
+        Game newGame = new Game(oldGame.gameID(), oldGame.whiteUsername(), username, oldGame.gameName(), oldGame.game());
+        games.put(gameID, newGame);
     }
 
     @Override
@@ -71,7 +73,7 @@ public class MainMemoryDAO implements DAOInterface {
 
     @Override
     public Game CreateGame(String gameName) {
-        ChessGame chessGame = new MyGame();
+        ChessGame chessGame = new MyGame(); // ChessGame interface implemented by MyGame class
 
         // Use currentID to set gameID and then increment it for the next game
         int gameID = currentID++;
@@ -84,7 +86,7 @@ public class MainMemoryDAO implements DAOInterface {
     }
 
     @Override
-    public void UpdateGame(Game g) throws DataAccessException {
+    public void UpdateGame(Game g) throws DataAccessException {     // fixme make sure this is the right implementation, might delete this function
         games.put(g.gameID(), g);
     }
 
@@ -108,6 +110,27 @@ public class MainMemoryDAO implements DAOInterface {
             throw new DataAccessException("Tried to delete game that doesn't exist");
         }
     }
+
+    @Override
+    public void AddObserver(int gameID, String username) throws DataAccessException {
+        observers.computeIfAbsent(gameID, k -> new ArrayList<>()).add(username);
+    }
+
+    @Override
+    public void RemoveObserver(int gameID, String username) throws DataAccessException{
+        if(observers.containsKey(gameID)) {
+            observers.get(gameID).remove(username);
+            if(observers.get(gameID).isEmpty()) {
+                observers.remove(gameID);
+            }
+        }
+    }
+
+    @Override
+    public List<String> GetObservers(int gameID) throws DataAccessException{
+        return observers.getOrDefault(gameID, new ArrayList<>());
+    }
+
 
     @Override
     public AuthToken CreateAuthToken(String username) throws DataAccessException {

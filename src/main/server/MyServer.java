@@ -13,6 +13,8 @@ import services.GameService;
 import services.UserService;
 import spark.*;
 
+import static spark.Spark.*;
+
 
 public class MyServer {
     final DAOInterface database;    // database
@@ -52,13 +54,13 @@ public class MyServer {
         // Register the handlers to handle specific HTTP requests.
 
         Spark.port(port);
-        Spark.delete("/db", clearHandler::handle);    // handle clear request
-        Spark.post("/user",userHandler::handle);  // handle register request
-        Spark.post("/session", authHandler::handle);  // handle login request
-        Spark.delete("/session", authHandler::handle);   // handle logout request
-        Spark.get("/game", gameHandler::handle); // handle list game request
-        Spark.post("/game", gameHandler::handle);  // handle create game request
-        Spark.put("/game", gameHandler::handle); // handle join game request
+        delete("/db", clearHandler::handle);    // handle clear request
+        post("/user",userHandler::handle);  // handle register request
+        post("/session", authHandler::handle);  // handle login request
+        delete("/session", authHandler::handle);   // handle logout request
+        get("/game", gameHandler::handle); // handle list game request
+        post("/game", gameHandler::handle);  // handle create game request
+        put("/game", gameHandler::handle); // handle join game request
 
         System.out.printf("Running server on port %d\n", port);
     }

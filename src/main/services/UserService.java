@@ -1,6 +1,9 @@
 package services;
 
 import dao.DAOInterface;
+import dataAccess.UnauthorizedException;
+import models.AuthToken;
+import models.User;
 import requests.RegisterRequest;
 import results.UserAuthResult;
 
@@ -30,23 +33,30 @@ public class UserService {
      * @param request
      * @return the authentication token of the new user
      */
-    public UserAuthResult register(RegisterRequest request) {
+    public UserAuthResult register(RegisterRequest request) throws UnauthorizedException {
         try {
             if (database.GetUser(request.username()) != null) {
                 // User already exists
                 return null;
             }
+            if (request.username() == null || request.username().isEmpty() ||
+                    request.password() == null || request.password().isEmpty() ||
+                    request.email() == null || request.email().isEmpty()) {
+                throw new UnauthorizedException("Error: bad request");
+            }
 
             // Here, you would typically hash the password before saving it
-            models.User newUser = new models.User(request.username(), request.password(), request.email());
+            User newUser = new User(request.username(), request.password(), request.email());
             database.AddUser(newUser);
 
             // Create and store an authentication token for the new user
             // Assuming CreateAuthToken method is implemented and returns a new token for the given user
-            models.AuthToken token = database.CreateAuthToken(newUser.username());
+            AuthToken token = database.CreateAuthToken(newUser.username());
 
             return new UserAuthResult(newUser.username(), token.authToken());
 
+        } catch (UnauthorizedException ue) {
+            throw ue;
         } catch (Exception e) {
             // Logging the error might be a good idea here
             throw new RuntimeException("Failed to register the user: " + e.getMessage());

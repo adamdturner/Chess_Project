@@ -1,6 +1,7 @@
 package handlers;
 
 import com.google.gson.Gson;
+import dataAccess.UnauthorizedException;
 import requests.RegisterRequest;
 import results.ErrorResult;
 import results.UserAuthResult;
@@ -21,15 +22,6 @@ public class UserHandler implements Route {
     public Object handle(Request request, Response response) {
         try {
             RegisterRequest regRequest = gson.fromJson(request.body(), RegisterRequest.class);
-
-            // Check if username, password, or email are missing or empty
-            if (regRequest.username() == null || regRequest.username().trim().isEmpty() ||
-                    regRequest.password() == null || regRequest.password().trim().isEmpty() ||
-                    regRequest.email() == null || regRequest.email().trim().isEmpty()) {
-                response.status(400);
-                return gson.toJson(new ErrorResult("Error: bad request"));
-            }
-
             UserAuthResult result = userService.register(regRequest);
 
             if (result != null) {
@@ -40,6 +32,9 @@ public class UserHandler implements Route {
                 return gson.toJson(new ErrorResult("Error: already taken"));
             }
 
+        } catch (UnauthorizedException ue) {
+            response.status(400);
+            return gson.toJson(new ErrorResult(ue.getMessage()));
         } catch (Exception e) {
             response.status(500);
             return gson.toJson(new ErrorResult("Error: " + e.getMessage()));

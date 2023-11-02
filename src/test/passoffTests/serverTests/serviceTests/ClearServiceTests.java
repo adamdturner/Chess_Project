@@ -1,19 +1,21 @@
 package passoffTests.serverTests.serviceTests;
 
-import chess.ChessGame;
+import dao.DAOInterface;
+import dao.MainMemoryDAO;
 import org.junit.jupiter.api.*;
-import passoffTests.TestFactory;
-import passoffTests.obfuscatedTestClasses.TestServerFacade;
-import passoffTests.testClasses.TestModels;
+import dataAccess.DataAccessException;
+import services.ClearApplicationService;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Locale;
-
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ClearServiceTests {
 
+    DAOInterface database = new MainMemoryDAO();
+    ClearApplicationService clearService = new ClearApplicationService(database);
+
+    @Test
+    @DisplayName("Clear database")
+    public void successClear() throws Exception {
+        Assertions.assertDoesNotThrow(() -> clearService.ClearDatabase());
+    }
 
 }
 

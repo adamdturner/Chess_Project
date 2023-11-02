@@ -1,11 +1,12 @@
 package dao;
 
 import dataAccess.DataAccessException;
+import models.AuthToken;
 import models.Game;
 import models.User;
-import models.AuthToken;
 
 import java.util.Collection;
+import java.util.List;
 
 
 /**
@@ -64,7 +65,7 @@ public interface DAOInterface {
      * @param username
      * @throws DataAccessException
      */
-    void SetWhitePlayer(String username) throws DataAccessException;
+    void SetWhitePlayer(int gameID, String username) throws DataAccessException;
 
     /** Update:
      * The player's username is provied and should be saved as the blackPlayer in the database
@@ -72,7 +73,7 @@ public interface DAOInterface {
      * @param username
      * @throws DataAccessException
      */
-    void SetBlackPlayer(String username) throws DataAccessException;
+    void SetBlackPlayer(int gameID, String username) throws DataAccessException;
 
     /** Delete:
      * A method to delete the given user
@@ -129,6 +130,33 @@ public interface DAOInterface {
      * @throws DataAccessException
      */
     void DeleteGame(int gameID) throws DataAccessException;
+
+    /**
+     * A method for adding an observer with username to a given game with gameID
+     *
+     * @param gameID
+     * @param username
+     * @throws DataAccessException
+     */
+    void AddObserver(int gameID, String username) throws DataAccessException;
+
+    /**
+     * A method for removing an observer with username to a given game with gameID
+     *
+     * @param gameID
+     * @param username
+     * @throws DataAccessException
+     */
+    void RemoveObserver(int gameID, String username) throws DataAccessException;
+
+    /**
+     * Gets a list of observers for a given game
+     *
+     * @param gameID
+     * @throws DataAccessException
+     */
+    List<String> GetObservers(int gameID) throws DataAccessException;
+
 
 
 

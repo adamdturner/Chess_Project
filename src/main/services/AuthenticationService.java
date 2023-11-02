@@ -74,7 +74,7 @@ public class AuthenticationService {
      * logs out the user represented by the authToken
      * @param authToken
      */
-    public boolean logout(String authToken) {
+    public boolean logout(String authToken) throws Exception {
         try {
             AuthToken token = database.GetAuthToken(authToken);
 
@@ -85,7 +85,7 @@ public class AuthenticationService {
 
             return false;
         } catch (Exception e) {
-            throw new RuntimeException("Logout failed: " + e.getMessage());
+            throw new Exception("Logout failed: " + e.getMessage());
         }
     }
 
