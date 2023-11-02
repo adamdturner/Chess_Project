@@ -25,30 +25,18 @@ public class AuthenticationService {
         this.database = database;
     }
 
-    //Login
-    //property:	                value:
-    //Description	            Logs in an existing user (returns a new authToken).
-    //URL path	                /session
-    //HTTP Method	            POST
-    //Body	                    { "username":"", "password":"" }
-    //Success response	        [200] { "username":"", "authToken":"" }
-    //Failure response	        [401] { "message": "Error: unauthorized" }
-    //Failure response	        [500] { "message": "Error: description" }
-
     /** HTTP Method: POST
      * A method for carrying out the login request of the specified user
-     * logs in an existing user
-     * @param request
      * @return a SuccessResult with a message, authToken and username or return an ErrorResult
      */
     public UserAuthResult login(LoginRequest request) {
         try {
-            User user = database.GetUser(request.username());
+            User user = database.getUser(request.username());
 
             // If user exists and password matches
             if (user != null && user.password().equals(request.password())) {
                 // Generate a new authentication token
-                AuthToken token = database.CreateAuthToken(user.username());
+                AuthToken token = database.createAuthToken(user.username());
                 return new UserAuthResult(user.username(), token.authToken());
             }
 
@@ -58,28 +46,16 @@ public class AuthenticationService {
         }
     }
 
-
-    //Logout
-    //property:	                value:
-    //Description	            Logs out the user represented by the authToken.
-    //URL path	                /session
-    //HTTP Method	            DELETE
-    //Headers	                authorization: <authToken>
-    //Success response	        [200]
-    //Failure response	        [401] { "message": "Error: unauthorized" }
-    //Failure response	        [500] { "message": "Error: description" }
-
     /** HTTP Method: DELETE
-     * A method for carrying out the logout request of the specified user
-     * logs out the user represented by the authToken
+     * A method for carrying out the logout request of the specified user if authorized by passing in a valid authToken
      * @param authToken
      */
     public boolean logout(String authToken) throws Exception {
         try {
-            AuthToken token = database.GetAuthToken(authToken);
+            AuthToken token = database.getAuthToken(authToken);
 
             if (token != null) {
-                database.DeleteAuthToken(authToken);
+                database.deleteAuthToken(authToken);
                 return true;
             }
 

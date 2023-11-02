@@ -10,6 +10,11 @@ import spark.Request;
 import spark.Response;
 import spark.Route;
 
+/**
+ * UserHandler is used for handling the POST request method used for
+ * a user registration. It uses Gson to read the request and sends it to the UserService.
+ * Methods in this class return a Json string back to the server.
+ */
 public class UserHandler implements Route {
 
     private final UserService userService;
@@ -19,6 +24,10 @@ public class UserHandler implements Route {
         this.userService = userService;
     }
 
+    /**
+     * handle() is used to call the register function in UserService to register the user
+     */
+    @Override
     public Object handle(Request request, Response response) {
         try {
             RegisterRequest regRequest = gson.fromJson(request.body(), RegisterRequest.class);

@@ -31,7 +31,7 @@ public class ClearApplicationService {
      * will use the private data member database
      */
     public void ClearDatabase() throws DataAccessException {
-        database.ClearAll();
+        database.clearAll();
     }
 
 }

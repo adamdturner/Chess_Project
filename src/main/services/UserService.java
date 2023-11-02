@@ -31,11 +31,10 @@ public class UserService {
      * registers a new user with a username, password and email from the request object
      *
      * @param request
-     * @return the authentication token of the new user
      */
     public UserAuthResult register(RegisterRequest request) throws UnauthorizedException {
         try {
-            if (database.GetUser(request.username()) != null) {
+            if (database.getUser(request.username()) != null) {
                 // User already exists
                 return null;
             }
@@ -47,11 +46,11 @@ public class UserService {
 
             // Here, you would typically hash the password before saving it
             User newUser = new User(request.username(), request.password(), request.email());
-            database.AddUser(newUser);
+            database.addUser(newUser);
 
             // Create and store an authentication token for the new user
             // Assuming CreateAuthToken method is implemented and returns a new token for the given user
-            AuthToken token = database.CreateAuthToken(newUser.username());
+            AuthToken token = database.createAuthToken(newUser.username());
 
             return new UserAuthResult(newUser.username(), token.authToken());
 

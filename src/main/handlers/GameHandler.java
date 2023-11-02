@@ -17,6 +17,11 @@ import spark.Route;
 
 import java.util.Arrays;
 
+/**
+ * GameHandler is used for handling the GET, POST and PUT request methods that are used for
+ * a game listing, creation or join. It uses Gson to read the request and sends it to the GameService.
+ * Methods in this class return a Json string back to the server.
+ */
 public class GameHandler implements Route {
     private final GameService gameService;
 
@@ -24,6 +29,10 @@ public class GameHandler implements Route {
         this.gameService = gameService;
     }
 
+    /**
+     * handle() determines if it's a GET, POST or PUT method and calls the corresponding
+     * function that handles that method
+     */
     @Override
     public Object handle(Request req, Response res) throws Exception {
         String method = req.requestMethod();
@@ -39,6 +48,10 @@ public class GameHandler implements Route {
         }
     }
 
+    /**
+     * Calls the GameService listGames() function to carry out the request
+     * recieves a list of games back in the result.
+     */
     private Object listGames(Request request, Response response) {
         Gson gson = new Gson();
         try {
@@ -62,6 +75,9 @@ public class GameHandler implements Route {
         }
     }
 
+    /**
+     * Calls the createGame() function in GameService which carries out the game creation in the database
+     */
     private Object createGame(Request request, Response response) {
         Gson gson = new Gson();
         try {
@@ -86,6 +102,9 @@ public class GameHandler implements Route {
         }
     }
 
+    /**
+     * Calls the joinGame() function in the GameService to let the user join a game
+     */
     private Object joinGame(Request request, Response response) {
         Gson gson = new Gson();
         try {

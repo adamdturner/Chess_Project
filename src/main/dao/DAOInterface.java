@@ -16,30 +16,16 @@ import java.util.List;
  */
 public interface DAOInterface {
 
-    // Model objects are parameters and return values for DAOInterface methods
-    // Provide all data storage and retrieval operations needed by the server
-    // The method interfaces on your DAOInterface classes should not need to change when they are re-implemented,
-    // because the rest of your server code should be unaware of where data is being stored (main memory vs. database)
-
-    // Methods on your DAOInterface classes will be CRUD operations:
-    // ->Create objects in data storage
-    // ->Read objects in data storage
-    // ->Update objects in data storage
-    // ->Delete objects from the data storage
-
-
-
     /** Delete:
      * A method for clearing all data from the database
      *
      * @throws DataAccessException
      */
-    void ClearAll() throws DataAccessException;
+    void clearAll() throws DataAccessException;
 
 
 
     //User
-
 
     /** Create:
      * A method to add a new User to the database
@@ -48,7 +34,7 @@ public interface DAOInterface {
      * @return the created user
      * @throws DataAccessException
      */
-    void AddUser(User user) throws DataAccessException;
+    void addUser(User user) throws DataAccessException;
 
     /** READ:
      * A method to find a user in the database
@@ -57,7 +43,7 @@ public interface DAOInterface {
      * @return the user if found, else return null
      * @throws DataAccessException
      */
-    User GetUser(String username) throws DataAccessException;
+    User getUser(String username) throws DataAccessException;
 
     /** Update:
      * The player's username is provied and should be saved as the whitePlayer in the database
@@ -65,7 +51,7 @@ public interface DAOInterface {
      * @param username
      * @throws DataAccessException
      */
-    void SetWhitePlayer(int gameID, String username) throws DataAccessException;
+    void setWhitePlayer(int gameID, String username) throws DataAccessException;
 
     /** Update:
      * The player's username is provied and should be saved as the blackPlayer in the database
@@ -73,21 +59,11 @@ public interface DAOInterface {
      * @param username
      * @throws DataAccessException
      */
-    void SetBlackPlayer(int gameID, String username) throws DataAccessException;
-
-    /** Delete:
-     * A method to delete the given user
-     *
-     * @param username
-     * @throws DataAccessException
-     */
-    void DeleteUser(String username) throws DataAccessException;
-
+    void setBlackPlayer(int gameID, String username) throws DataAccessException;
 
 
 
     //Game
-
 
     /** Create:
      * A method to create a new game with the given game name
@@ -96,15 +72,7 @@ public interface DAOInterface {
      * @return the created game
      * @throws DataAccessException
      */
-    Game CreateGame(String gameName) throws DataAccessException;
-
-    /** Update:
-     * Update game by replacing the chessGame string corresponding to a given gameID with a new chessGame string
-     *
-     * @param g
-     * @throws DataAccessException
-     */
-    void UpdateGame(Game g) throws DataAccessException;
+    Game createGame(String gameName) throws DataAccessException;
 
     /** Read:
      * A method for retrieving a specified game from the database by gameID
@@ -113,7 +81,7 @@ public interface DAOInterface {
      * @return the game if found else return null
      * @throws DataAccessException
      */
-    Game FindGame(int gameID) throws DataAccessException;
+    Game findGame(int gameID) throws DataAccessException;
 
     /** Read:
      * A method for retrieving all games from the database
@@ -121,15 +89,7 @@ public interface DAOInterface {
      * @return a list of all the games
      * @throws DataAccessException
      */
-    Collection<Game> FindAllGames() throws DataAccessException;
-
-    /** Delete:
-     * A method for deleting a given game
-     *
-     * @param gameID
-     * @throws DataAccessException
-     */
-    void DeleteGame(int gameID) throws DataAccessException;
+    Collection<Game> findAllGames() throws DataAccessException;
 
     /**
      * A method for adding an observer with username to a given game with gameID
@@ -138,30 +98,11 @@ public interface DAOInterface {
      * @param username
      * @throws DataAccessException
      */
-    void AddObserver(int gameID, String username) throws DataAccessException;
-
-    /**
-     * A method for removing an observer with username to a given game with gameID
-     *
-     * @param gameID
-     * @param username
-     * @throws DataAccessException
-     */
-    void RemoveObserver(int gameID, String username) throws DataAccessException;
-
-    /**
-     * Gets a list of observers for a given game
-     *
-     * @param gameID
-     * @throws DataAccessException
-     */
-    List<String> GetObservers(int gameID) throws DataAccessException;
-
+    void addObserver(int gameID, String username) throws DataAccessException;
 
 
 
     //AuthToken
-
 
     /** Create:
      * A method to create a new token with the given username and adds it to the database
@@ -172,8 +113,7 @@ public interface DAOInterface {
      * @return the created token
      * @throws DataAccessException
      */
-    AuthToken CreateAuthToken(String username) throws DataAccessException;
-
+    AuthToken createAuthToken(String username) throws DataAccessException;
 
     /** Read:
      * A method to read the token indicated by the authToken string parameter
@@ -182,7 +122,7 @@ public interface DAOInterface {
      * @return the token if it exists else return null
      * @throws DataAccessException
      */
-    AuthToken GetAuthToken(String authToken) throws DataAccessException;
+    AuthToken getAuthToken(String authToken) throws DataAccessException;
 
     /** Delete:
      * A method to delete the token indicated by the authToken string parameter
@@ -190,6 +130,6 @@ public interface DAOInterface {
      * @param authToken
      * @throws DataAccessException
      */
-    void DeleteAuthToken(String authToken) throws DataAccessException;
+    void deleteAuthToken(String authToken) throws DataAccessException;
 
 }

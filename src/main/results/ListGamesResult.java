@@ -4,6 +4,9 @@ import models.Game;
 
 import java.util.List;
 
+/**
+ * ListGamesResult holds the necessary data that is returned when getting a list of games
+ */
 public class ListGamesResult {
     private List<Game> games;
 

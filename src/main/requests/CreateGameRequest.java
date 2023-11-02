@@ -1,5 +1,8 @@
 package requests;
 
+/**
+ * CreateGameRequest holds the necessary data used in the process of creating a game
+ */
 public class CreateGameRequest {
     private String gameName;
     private String authToken;

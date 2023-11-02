@@ -1,5 +1,8 @@
 package requests;
 
+/**
+ * ListGamesRequest holds the necessary data used in the process of getting a list of games
+ */
 public class ListGamesRequest {
 
     private String authToken;

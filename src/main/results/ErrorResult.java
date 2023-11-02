@@ -1,5 +1,7 @@
 package results;
 
-public record ErrorResult(String message) {
-}
+/**
+ * ErrorResult holds the error message that is returned when something goes wrong
+ */
+public record ErrorResult(String message) {}
 

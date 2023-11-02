@@ -33,20 +33,20 @@ public class GameService {
     }
 
     /** HTTP Method: GET
-     * Gives a list of games in the database wherever they are stored
-     * doesn't take parameters because it will be checking its own private data member called data
-     * @return a list of all games
+     * Method to access the list of game in the database if authToken is valid
+     * @param authToken
+     * @return a list of all games stored in database
      */
     public ListGamesResult listGames(String authToken) throws UnauthorizedException, DataAccessException {
         try {
             // Step 1: Verify authorization using authToken
-            AuthToken token = database.GetAuthToken(authToken);
+            AuthToken token = database.getAuthToken(authToken);
             if (token == null) {
                 throw new UnauthorizedException("Unauthorized");
             }
 
             // Step 2: Retrieve all games from database
-            List<Game> allGames = new ArrayList<>(database.FindAllGames());
+            List<Game> allGames = new ArrayList<>(database.findAllGames());
 
             return new ListGamesResult(allGames);
 
@@ -56,11 +56,10 @@ public class GameService {
         }
     }
 
-
     /** HTTP Method: POST
-     * Creates a new game
+     * Creates a new game with a game name if a valid authToken is passed in
      * @param gameName
-     * @return
+     * @param authToken
      */
     public CreateGameResult createGame(String gameName, String authToken) throws DataAccessException, UnauthorizedException {
         // Ensure valid gameName here if needed
@@ -70,13 +69,13 @@ public class GameService {
         }
 
         // Step 1: Verify authorization using authToken
-        AuthToken token = database.GetAuthToken(authToken);
+        AuthToken token = database.getAuthToken(authToken);
         if (token == null) {
             throw new UnauthorizedException("Unauthorized");
         }
 
         // Step 2: Create a new game
-        Game newGame = database.CreateGame(gameName);
+        Game newGame = database.createGame(gameName);
 
         return new CreateGameResult(newGame.gameID());
     }
@@ -85,36 +84,35 @@ public class GameService {
      * Verifies that the game exists. If color is specified, add the caller as the requested color to the game.
      * If no color is specified then the user is joined as an observer
      *
-     * @return the game that was joined
+     * @param authToken
+     * @param playerColor
+     * @param gameID
      */
     public SuccessResult joinGame(String authToken, String playerColor, int gameID) throws UnauthorizedException, Exception, DataAccessException {
         try {
             // Step 1: Verify authorization using authToken
-            AuthToken token = database.GetAuthToken(authToken);
+            AuthToken token = database.getAuthToken(authToken);
             if (token == null) {
                 throw new UnauthorizedException("Error: Unauthorized");
             }
 
-            // Step 2: Ensure the game exists
-            Game existingGame = database.FindGame(gameID);
-//            if (existingGame == null) {
-//                throw new DataAccessException("Error: Game not found");
-//            }
+            // Step 2: Get the game existing game
+            Game existingGame = database.findGame(gameID);
 
             // Step 3: Check and assign player based on color or add as observer
             if (playerColor == null || playerColor.isEmpty()) {
                 // Add as an observer
-                database.AddObserver(gameID, token.username());
+                database.addObserver(gameID, token.username());
             } else if ("WHITE".equalsIgnoreCase(playerColor)) {
                 if (existingGame.whiteUsername() != null) {
                     throw new Exception("Error: already taken");
                 }
-                database.SetWhitePlayer(gameID, token.username());
+                database.setWhitePlayer(gameID, token.username());
             } else if ("BLACK".equalsIgnoreCase(playerColor)) {
                 if (existingGame.blackUsername() != null) {
                     throw new Exception("Error: already taken");
                 }
-                database.SetBlackPlayer(gameID, token.username());
+                database.setBlackPlayer(gameID, token.username());
             } else {
                 throw new Exception("Invalid player color");
             }
@@ -129,14 +127,5 @@ public class GameService {
             throw new Exception("Error: already taken");
         }
     }
-
-
-
-
-
-
-
-
-
 
 }

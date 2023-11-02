@@ -1,5 +1,6 @@
 package models;
 
-public record User(String username, String password, String email) {
-
-}
+/**
+ * simple record class used for carrying data
+ */
+public record User(String username, String password, String email) {}

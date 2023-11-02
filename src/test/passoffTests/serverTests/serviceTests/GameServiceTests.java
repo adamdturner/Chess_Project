@@ -63,7 +63,7 @@ public class GameServiceTests {
     @Test
     @Order(2)
     @DisplayName("Unauthorized game creation")
-    public void failLogin() throws Exception {
+    public void failCreateGame() throws Exception {
         // missing authToken
         Assertions.assertThrows(Exception.class, () -> gameService.createGame(gameName,null));
     }

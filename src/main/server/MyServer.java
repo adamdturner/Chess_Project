@@ -54,6 +54,7 @@ public class MyServer {
         // Register the handlers to handle specific HTTP requests.
 
         Spark.port(port);
+        Spark.externalStaticFileLocation("web");
         delete("/db", clearHandler::handle);    // handle clear request
         post("/user",userHandler::handle);  // handle register request
         post("/session", authHandler::handle);  // handle login request

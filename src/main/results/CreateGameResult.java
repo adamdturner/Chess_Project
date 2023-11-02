@@ -1,5 +1,8 @@
 package results;
 
+/**
+ * CreateGameResult holds the necessary data that is returned from a game creation
+ */
 public class CreateGameResult {
     private int gameID;
 

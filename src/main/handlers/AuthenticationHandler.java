@@ -9,6 +9,11 @@ import spark.Request;
 import spark.Response;
 import spark.Route;
 
+/**
+ * AuthenticationHandler is used for handling the POST and DELETE request methods that are used for
+ * a session login or logout. It uses Gson to read the request and sends it to the AuthenticationService.
+ * Methods in this class return a Json string back to the server.
+ */
 public class AuthenticationHandler implements Route {
 
     private final AuthenticationService authService;
@@ -18,6 +23,10 @@ public class AuthenticationHandler implements Route {
         this.authService = authService;
     }
 
+    /**
+     * handle() determines if it's a post or delete method and calls the corresponding
+     * function that handles that method
+     */
     @Override
     public Object handle(Request request, Response response) {
         String method = request.requestMethod();
@@ -33,6 +42,9 @@ public class AuthenticationHandler implements Route {
         }
     }
 
+    /**
+     * Method for handling login. This method calls the AuthenticationService login() function
+     */
     private Object handleLoginRequest(Request request, Response response) {
         try {
             LoginRequest loginRequest = gson.fromJson(request.body(), LoginRequest.class);
@@ -51,6 +63,9 @@ public class AuthenticationHandler implements Route {
         }
     }
 
+    /**
+     * Method for handling logout. This method calls the AuthenticationService logout() function
+     */
     private Object handleLogoutRequest(Request request, Response response) {
         try {
             String authToken = request.headers("authorization");

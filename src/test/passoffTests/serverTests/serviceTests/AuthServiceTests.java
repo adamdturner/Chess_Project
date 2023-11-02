@@ -23,7 +23,7 @@ public class AuthServiceTests {
     @Order(1)
     @DisplayName("Login user success")
     public void successLogin() throws Exception {
-        database.AddUser(new User("AdamT", "myPassword123", "myemail@email.com"));
+        database.addUser(new User("AdamT", "myPassword123", "myemail@email.com"));
         LoginRequest request = new LoginRequest("AdamT", "myPassword123");
         UserAuthResult result = authService.login(request);
         authToken = result.authToken();
@@ -34,7 +34,7 @@ public class AuthServiceTests {
     @Order(2)
     @DisplayName("Unauthorized login attempt")
     public void failLogin() throws Exception {
-        database.AddUser(new User("AdamT", "myPassword123", "myemail@email.com"));
+        database.addUser(new User("AdamT", "myPassword123", "myemail@email.com"));
         LoginRequest request = new LoginRequest("AdamT", null);
         Assertions.assertNull(authService.login(request));
     }

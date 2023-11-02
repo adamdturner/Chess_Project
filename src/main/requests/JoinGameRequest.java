@@ -1,5 +1,8 @@
 package requests;
 
+/**
+ * JoinGameRequest holds the necessary data used in the process of joining a game
+ */
 public class JoinGameRequest {
 
     String playerColor;
