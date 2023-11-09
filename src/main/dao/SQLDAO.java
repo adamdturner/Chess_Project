@@ -20,14 +20,14 @@ import java.util.UUID;
 
 public class SQLDAO implements DAOInterface {
 
-    private Database database;
+    private final Database database;
 
-    public SQLDAO() throws SQLException, DataAccessException {
+    public SQLDAO() throws DataAccessException {
         database = new Database();
         configureDatabase();
     }
 
-    void configureDatabase() throws SQLException, DataAccessException {
+    void configureDatabase() throws DataAccessException {
         var conn = database.getConnection();
         try {
             var createDbStatement = conn.prepareStatement("CREATE DATABASE IF NOT EXISTS " + Database.DB_NAME);
@@ -55,7 +55,7 @@ public class SQLDAO implements DAOInterface {
                 gameID INT NOT NULL AUTO_INCREMENT,
                 whiteUsername VARCHAR(255) DEFAULT NULL,
                 blackUsername VARCHAR(255) DEFAULT NULL,
-                gameName VARCHAR(255) DEFAULT NULL,
+                gameName VARCHAR(255) NOT NULL,
                 game longtext NOT NULL,
                 PRIMARY KEY (gameID)
             )""";
@@ -156,6 +156,9 @@ public class SQLDAO implements DAOInterface {
 
     @Override
     public void setWhitePlayer(int gameID, String username) throws DataAccessException {
+        if (this.getUser(username) == null) {
+            throw new DataAccessException("User not found");
+        }
         String sql = "UPDATE games SET whiteUsername = ? WHERE gameID = ?";
         var conn = database.getConnection();
         try (var stmt = conn.prepareStatement(sql)) {
@@ -173,6 +176,9 @@ public class SQLDAO implements DAOInterface {
 
     @Override
     public void setBlackPlayer(int gameID, String username) throws DataAccessException {
+        if (this.getUser(username) == null) {
+            throw new DataAccessException("User not found");
+        }
         String sql = "UPDATE games SET blackUsername = ? WHERE gameID = ?";
         var conn = database.getConnection();
         try (var stmt = conn.prepareStatement(sql)) {
@@ -190,6 +196,9 @@ public class SQLDAO implements DAOInterface {
 
     @Override
     public Game createGame(String gameName) throws DataAccessException {
+        if (gameName == null){
+            throw new DataAccessException("Did not pass give the game a name");
+        }
         ChessGame chessGame = new MyGame(); // Create a new ChessGame instance
         Gson gson = new GsonBuilder().create(); // Serialize the object
         String json = gson.toJson(chessGame);
@@ -290,6 +299,9 @@ public class SQLDAO implements DAOInterface {
 
     @Override
     public void addObserver(int gameID, String username) throws DataAccessException {
+        if (this.getUser(username) == null) {
+            throw new DataAccessException("User not found");
+        }
         String sql = "INSERT INTO observers (gameID, username) VALUES (?, ?)";
 
         var conn = database.getConnection();
@@ -313,6 +325,9 @@ public class SQLDAO implements DAOInterface {
 
     @Override
     public AuthToken createAuthToken(String username) throws DataAccessException {
+        if (this.getUser(username) == null) {
+            throw new DataAccessException("User not found");
+        }
         String token = UUID.randomUUID().toString(); // Generates a unique token
         String insertTokenSQL = "INSERT INTO tokens (authToken, username) VALUES (?, ?)";
         var conn = database.getConnection();

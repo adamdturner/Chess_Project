@@ -28,8 +28,6 @@ public class GameServiceTests {
     static {
         try {
             database = new SQLDAO();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }
