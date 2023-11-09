@@ -2,6 +2,7 @@ package server;
 
 import dao.DAOInterface;
 import dao.MainMemoryDAO;
+import dao.SQLDAO;
 import handlers.AuthenticationHandler;
 import handlers.ClearApplicationHandler;
 import handlers.GameHandler;
@@ -27,7 +28,7 @@ public class MyServer {
     final AuthenticationHandler authHandler;    // login / logout
     final AuthenticationService authService;
 
-    final GameHandler gameHandler;
+    final GameHandler gameHandler;  // list / create / join
     final GameService gameService;
 
     public MyServer(DAOInterface database) {
@@ -44,8 +45,8 @@ public class MyServer {
 
     public static void main(String[] args) throws Exception {
         // Switch the DAO by uncommenting/commenting the desired line:
-        // new Server(new SQLDAO()).run(8080);
-        new MyServer(new MainMemoryDAO()).run(8080);
+        new MyServer(new SQLDAO()).run(8080);
+//        new MyServer(new MainMemoryDAO()).run(8080);
     }
 
 

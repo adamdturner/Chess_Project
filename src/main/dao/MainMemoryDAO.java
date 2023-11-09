@@ -33,6 +33,7 @@ public class MainMemoryDAO implements DAOInterface {
         users.clear();
         tokens.clear();
         games.clear();
+        observers.clear();
         currentID = 1000;
         currentTokenNum = 1000;
     }

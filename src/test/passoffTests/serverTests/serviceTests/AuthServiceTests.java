@@ -2,6 +2,8 @@ package passoffTests.serverTests.serviceTests;
 
 import dao.DAOInterface;
 import dao.MainMemoryDAO;
+import dao.SQLDAO;
+import dataAccess.DataAccessException;
 import dataAccess.UnauthorizedException;
 import handlers.AuthenticationHandler;
 import models.AuthToken;
@@ -12,12 +14,18 @@ import results.SuccessResult;
 import results.UserAuthResult;
 import services.AuthenticationService;
 
+import java.sql.SQLException;
+
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class AuthServiceTests {
 
-    DAOInterface database = new MainMemoryDAO();
+    //    DAOInterface database = new MainMemoryDAO();
+    DAOInterface database = new SQLDAO();
     AuthenticationService authService = new AuthenticationService(database);
     String authToken;
+
+    public AuthServiceTests() throws SQLException, DataAccessException {
+    }
 
     @Test
     @Order(1)
@@ -34,8 +42,8 @@ public class AuthServiceTests {
     @Order(2)
     @DisplayName("Unauthorized login attempt")
     public void failLogin() throws Exception {
-        database.addUser(new User("AdamT", "myPassword123", "myemail@email.com"));
-        LoginRequest request = new LoginRequest("AdamT", null);
+        database.addUser(new User("AdamTurner", "myPassword123", "myemail@email.com"));
+        LoginRequest request = new LoginRequest("AdamTurner", null);
         Assertions.assertNull(authService.login(request));
     }
 

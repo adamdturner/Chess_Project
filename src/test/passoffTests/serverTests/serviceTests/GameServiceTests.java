@@ -2,6 +2,8 @@ package passoffTests.serverTests.serviceTests;
 
 import dao.DAOInterface;
 import dao.MainMemoryDAO;
+import dao.SQLDAO;
+import dataAccess.DataAccessException;
 import dataAccess.UnauthorizedException;
 import handlers.GameHandler;
 import models.AuthToken;
@@ -15,10 +17,24 @@ import services.AuthenticationService;
 import services.GameService;
 import services.UserService;
 
+import java.sql.SQLException;
+
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class GameServiceTests {
 
-    static DAOInterface database = new MainMemoryDAO();
+    //    static DAOInterface database = new MainMemoryDAO();
+    static DAOInterface database;
+
+    static {
+        try {
+            database = new SQLDAO();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (DataAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     static GameService gameService = new GameService(database);
     static String authToken;
     static String gameName;
@@ -31,11 +47,14 @@ public class GameServiceTests {
     static LoginRequest loginRequest1;
     static LoginRequest loginRequest2;
 
+    public GameServiceTests() throws SQLException, DataAccessException {
+    }
+
 
     @BeforeAll
     public static void setup() throws UnauthorizedException {
         // register 2 users
-        request1 = new RegisterRequest("Adam", "Turner", "myemail@email.com");
+        request1 = new RegisterRequest("Joe", "Turner", "myemail@email.com");
         request2 = new RegisterRequest("Bob", "Turner", "other@email.com");
         userService.register(request1);
         userService.register(request2);
