@@ -2,18 +2,13 @@ package server;
 
 import dao.DAOInterface;
 import dao.SQLDAO;
-import handlers.AuthenticationHandler;
-import handlers.ClearApplicationHandler;
-import handlers.GameHandler;
-import handlers.UserHandler;
+import handlers.*;
 import services.AuthenticationService;
 import services.ClearApplicationService;
 
 import services.GameService;
 import services.UserService;
 import spark.*;
-
-import static spark.Spark.*;
 
 
 public class MyServer {
@@ -30,6 +25,8 @@ public class MyServer {
     final GameHandler gameHandler;  // list / create / join
     final GameService gameService;
 
+    WebSocketHandler webSocketHandler;  // connect
+
     public MyServer(DAOInterface database) {
         this.database = database;
         clearService = new ClearApplicationService(database);
@@ -40,6 +37,7 @@ public class MyServer {
         authHandler = new AuthenticationHandler(authService);
         gameService = new GameService(database);
         gameHandler = new GameHandler(gameService);
+        webSocketHandler = new WebSocketHandler(database);
     }
 
     public static void main(String[] args) throws Exception {
@@ -55,13 +53,16 @@ public class MyServer {
 
         Spark.port(port);
         Spark.externalStaticFileLocation("web");
-        Spark.delete("/db", clearHandler);    // handle clear request
+
+        Spark.webSocket("/connect", webSocketHandler);  // handle connection request
+
+        Spark.delete("/db", clearHandler);  // handle clear request
         Spark.post("/user", userHandler);  // handle register request
         Spark.post("/session", authHandler);  // handle login request
-        Spark.delete("/session", authHandler);   // handle logout request
-        Spark.get("/game", gameHandler); // handle list game request
+        Spark.delete("/session", authHandler);  // handle logout request
+        Spark.get("/game", gameHandler);  // handle list game request
         Spark.post("/game", gameHandler);  // handle create game request
-        Spark.put("/game", gameHandler); // handle join game request
+        Spark.put("/game", gameHandler);  // handle join game request
 
         System.out.printf("Running server on port %d\n", port);
     }

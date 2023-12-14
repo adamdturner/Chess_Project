@@ -77,6 +77,7 @@ public class GameService {
 
         // Step 2: Create a new game
         Game newGame = database.createGame(gameName);
+        newGame.setState(Game.GameState.UNDECIDED);
 
         return new CreateGameResult(newGame.gameID());
     }
