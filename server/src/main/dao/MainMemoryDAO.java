@@ -87,9 +87,24 @@ public class MainMemoryDAO implements DAOInterface {
         return Collections.unmodifiableCollection(games.values());
     }
 
+    public void updateGame(Game game) throws DataAccessException {
+        // fixme not done
+    }
+
     @Override
     public void addObserver(int gameID, String username) throws DataAccessException {
         observers.computeIfAbsent(gameID, k -> new ArrayList<>()).add(username);
+    }
+
+    @Override
+    public boolean removeObserver(int gameID, String username) throws DataAccessException {
+        // fixme not done
+        return false;
+    }
+    @Override
+    public boolean getObserver(int gameID, String username) throws DataAccessException {
+        // fixme not done
+        return false;
     }
 
 

@@ -108,8 +108,7 @@ public class PostLoginFacade {
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 JoinResult result = gson.fromJson(response, JoinResult.class);
                 return result.game();
-            }
-            else {
+            } else {
                 // Handle failed joinGame
                 System.out.println("Join failed: check if color is already taken");
                 return null;

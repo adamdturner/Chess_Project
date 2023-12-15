@@ -11,4 +11,12 @@ public class MoveCommand extends UserGameCommand {
         this.gameID = gameID;
         this.commandType = CommandType.MAKE_MOVE;
     }
+
+    public int getGameID() {
+        return gameID;
+    }
+
+    public void setGameID(int gameID) {
+        this.gameID = gameID;
+    }
 }

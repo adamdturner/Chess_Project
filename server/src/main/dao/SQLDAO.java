@@ -287,7 +287,6 @@ public class SQLDAO implements DAOInterface {
                 String json = rs.getString("game");
 
                 // Deserialize the JSON string back into a ChessGame object
-                System.out.println("JSON to deserialize: " + json);
                 ChessGame chessGame = gson.fromJson(json, ChessGame.class);
 
                 // Create a Game object and add it to the list
@@ -302,7 +301,41 @@ public class SQLDAO implements DAOInterface {
         return games;
     }
 
+    @Override
+    public void updateGame(Game game) throws DataAccessException {
+        if (game == null || game.gameID() <= 0) {
+            throw new DataAccessException("Invalid game object or game ID");
+        }
 
+        // Serialize the ChessGame object to JSON
+        Gson gson = new GsonBuilder()
+                .registerTypeAdapter(ChessGame.class, new ChessGameTypeAdapter())
+                .registerTypeAdapter(ChessBoard.class, new ChessBoardTypeAdapter())
+                .registerTypeAdapter(ChessPiece.class, new ChessPieceTypeAdapter())
+                .create();
+        String json = gson.toJson(game.game());
+
+        // SQL query to update the game
+        String sql = "UPDATE games SET whiteUsername = ?, blackUsername = ?, gameName = ?, game = ? WHERE gameID = ?";
+
+        var conn = database.getConnection();
+        try (var stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, game.whiteUsername());
+            stmt.setString(2, game.blackUsername());
+            stmt.setString(3, game.gameName());
+            stmt.setString(4, json);
+            stmt.setInt(5, game.gameID());
+
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new DataAccessException("Updating game failed, no game found with ID " + game.gameID());
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error updating game: " + e.getMessage());
+        } finally {
+            database.returnConnection(conn);
+        }
+    }
 
 
     @Override
@@ -324,6 +357,54 @@ public class SQLDAO implements DAOInterface {
             }
         } catch (SQLException e) {
             throw new DataAccessException("Error adding observer to the database: " + e.getMessage());
+        } finally {
+            database.returnConnection(conn);
+        }
+    }
+
+    @Override
+    public boolean getObserver(int gameID, String username) throws DataAccessException {
+        String sql = "SELECT * FROM observers WHERE gameID = ? AND username = ?";
+
+        var conn = database.getConnection();
+        try (var stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, gameID);
+            stmt.setString(2, username);
+
+            try (var rs = stmt.executeQuery()) {
+                // If the result set has a row, then the observer exists
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error checking observer in the database: " + e.getMessage());
+        } finally {
+            database.returnConnection(conn);
+        }
+    }
+
+
+    @Override
+    public boolean removeObserver(int gameID, String username) throws DataAccessException {
+        if (this.getUser(username) == null) {
+            throw new DataAccessException("User not found");
+        }
+
+        String sql = "DELETE FROM observers WHERE gameID = ? AND username = ?";
+
+        var conn = database.getConnection();
+        try (var stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, gameID);
+            stmt.setString(2, username);
+
+            int affectedRows = stmt.executeUpdate();
+
+            if (affectedRows == 0) {
+                throw new DataAccessException("Removing observer failed, no rows affected.");
+            }
+
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            throw new DataAccessException("Error removing observer from the database: " + e.getMessage());
         } finally {
             database.returnConnection(conn);
         }

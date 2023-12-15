@@ -31,15 +31,6 @@ public class UserGameCommand {
     protected CommandType commandType;
 
     private final String authToken;
-    private AuthToken token;
-
-    public AuthToken getToken() {
-        return token;
-    }
-
-    public void setToken(AuthToken token) {
-        this.token = token;
-    }
 
     public String getAuthString() {
         return authToken;

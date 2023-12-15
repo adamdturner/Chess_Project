@@ -16,6 +16,7 @@ import webSocketMessages.serverMessages.NotificationMessage;
 import webSocketMessages.userCommands.*;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -44,7 +45,7 @@ public class WebSocketHandler {
     }
 
     @OnWebSocketMessage
-    public void onMessage(Session session, String message) throws DataAccessException {
+    public void onMessage(Session session, String message) throws DataAccessException, InvalidMoveException {
         if (session != null) {
             // Deserialize the JSON message to UserGameCommand or its specific subclass
             UserGameCommand command = deserializeFromJson(message, UserGameCommand.class);
@@ -63,19 +64,19 @@ public class WebSocketHandler {
                             break;
                         case JOIN_OBSERVER:
                             JoinObserverCommand joinObserverCommand = deserializeFromJson(message, JoinObserverCommand.class);
-                            handleJoinObserverCommand(session, joinObserverCommand);
+                            handleJoinObserverCommand(session, joinObserverCommand, user);
                             break;
                         case MAKE_MOVE:
                             MoveCommand moveCommand = deserializeFromJson(message, MoveCommand.class);
-                            handleMakeMoveCommand(session, moveCommand);
+                            handleMakeMoveCommand(session, moveCommand, user);
                             break;
                         case LEAVE:
                             LeaveGameCommand leaveGameCommand = deserializeFromJson(message, LeaveGameCommand.class);
-                            handleLeaveCommand(session, leaveGameCommand);
+                            handleLeaveCommand(session, leaveGameCommand, user);
                             break;
                         case RESIGN:
-                            LeaveGameCommand resignGameCommand = deserializeFromJson(message, LeaveGameCommand.class);
-                            handleResignCommand(session, resignGameCommand);
+                            ResignGameCommand resignGameCommand = deserializeFromJson(message, ResignGameCommand.class);
+                            handleResignCommand(session, resignGameCommand, user);
                             break;
                         default:
                             // someone sent in a command with just the authToken and no commandType
@@ -91,6 +92,7 @@ public class WebSocketHandler {
         }
     }
 
+
     /** Methods for handling UserGameCommands below */
 
     private void handleJoinPlayerCommand(Session session, JoinPlayerCommand command, User user) throws DataAccessException {
@@ -103,7 +105,7 @@ public class WebSocketHandler {
                 // Send LOAD_GAME message back to the root client
                 sendLoadGameMessage(session, game);
 
-                // Notify other clients
+                // Send NOTIFICATION message to all other clients
                 NotificationMessage notificationMessage = new NotificationMessage(username + " joined game as " + command.playerColor);
                 broadcastMessage(serializeToJson(notificationMessage),session);
             } else {
@@ -115,22 +117,160 @@ public class WebSocketHandler {
         }
     }
 
-    public void handleJoinObserverCommand(Session session, JoinObserverCommand command) {
+    public void handleJoinObserverCommand(Session session, JoinObserverCommand command, User user) throws DataAccessException {
+        int gameId = command.getGameID();
+        Game game = database.findGame(gameId);
+        if (game != null) {
+            // Send LOAD_GAME message back to the root client (observer)
+            sendLoadGameMessage(session, game);
 
+            // Prepare notification message
+            String observerUsername = user.username();
+            String notificationMessage = observerUsername + " joined game " + gameId + " as an observer.";
+
+            // Send NOTIFICATION message to all other clients
+            NotificationMessage notification = new NotificationMessage(notificationMessage);
+            broadcastMessage(serializeToJson(notification), session);
+        } else {
+            // Game not found, send an error message back to root client
+            sendErrorMessage(session, "Error: Game with ID " + gameId + " does not exist.");
+        }
     }
 
-    public void handleMakeMoveCommand(Session session, MoveCommand command) {
+    public void handleMakeMoveCommand(Session session, MoveCommand command, User user) throws DataAccessException, InvalidMoveException {
+        Game game = database.findGame(command.getGameID());
+        if (game != null && !game.isGameOver()) {
+            if (!Objects.equals(user.username(), game.whiteUsername()) && !Objects.equals(user.username(), game.blackUsername())) {
+                sendErrorMessage(session, "Error: Observer can't make a move");
+            } else {
+                // check if it's their turn
+                if (((game.game().getTeamTurn() == ChessGame.TeamColor.WHITE) && (Objects.equals(user.username(), game.blackUsername()))) ||
+                        ((game.game().getTeamTurn() == ChessGame.TeamColor.BLACK) && (Objects.equals(user.username(), game.whiteUsername())))) {
 
+                    sendErrorMessage(session, "Error: wrong turn");
+                    return;
+                }
+                // get all the valid moves
+                Collection<ChessMove> validMoves = game.game().validMoves(command.move.getStartPosition());
+
+                // Verify the move's validity
+                if (validMoves.contains(command.move)) {
+                    // Make move
+                    game.game().makeMove(command.move);
+                    // Update game state
+                    if (game.game().isInCheckmate(game.game().getTeamTurn()) && (game.game().getTeamTurn() == ChessGame.TeamColor.BLACK)) {
+                        game.setState(Game.GameState.BLACK);
+                    } else if (game.game().isInCheckmate(game.game().getTeamTurn()) && (game.game().getTeamTurn() == ChessGame.TeamColor.WHITE)) {
+                        game.setState(Game.GameState.WHITE);
+                    } else if (game.game().isInStalemate(game.game().getTeamTurn())) {
+                        game.setState(Game.GameState.DRAW);
+                    } else {
+                        game.setState(Game.GameState.UNDECIDED);
+                    }
+                    // Update the database with updated game
+                    database.updateGame(game);
+
+                    // Send LOAD_GAME message back to root client
+                    sendLoadGameMessage(session, game);
+
+                    // Send LOAD_GAME message to all other clients
+                    LoadGameMessage loadGameMessage = new LoadGameMessage(game);
+                    broadcastMessage(serializeToJson(loadGameMessage), session);
+
+                    // Send NOTIFICATION message to all other clients
+                    NotificationMessage notificationMessage = new NotificationMessage(user.username() + " made a move.");
+                    broadcastMessage(serializeToJson(notificationMessage), session);
+                } else {
+                    sendErrorMessage(session, "Error: Invalid move");
+                }
+            }
+        } else {
+            if (game == null) { sendErrorMessage(session, "Error: Game not found"); }
+            assert game != null;
+            sendErrorMessage(session, "Error: Game is over");
+        }
     }
 
-    public void handleLeaveCommand(Session session, LeaveGameCommand command) {
+    public void handleLeaveCommand(Session session, LeaveGameCommand command, User user) throws DataAccessException {
+        Game game = database.findGame(command.getGameId());
+        if (game != null) {
 
+            // Check if the user is part of the game
+            if (!Objects.equals(user.username(), game.whiteUsername()) && !Objects.equals(user.username(), game.blackUsername())) {
+                // check if they were an observer and remove them
+                if (database.getObserver(game.gameID(), user.username())) {
+                    database.removeObserver(game.gameID(), user.username());
+                } else {
+                    sendErrorMessage(session, "Error: User was not part of the game or observing");
+                    return;
+                }
+            }
+            // Update the game to reflect the player's departure
+            if (Objects.equals(user.username(), game.whiteUsername())) {
+                game = game.setWhite(null); // Remove the white player
+            } else if (Objects.equals(user.username(), game.blackUsername())) {
+                game = game.setBlack(null); // Remove the black player
+            }
+            // Update the game in the database
+            database.updateGame(game);
+
+            // Prepare and send a notification message to all other clients
+            String notificationMessage = user.username() + " has left the game.";
+            NotificationMessage notification = new NotificationMessage(notificationMessage);
+            broadcastMessage(serializeToJson(notification), session);
+
+            // Notify root as well
+            notificationMessage = "You have left the game.";
+            notification = new NotificationMessage(notificationMessage);
+            returnMessage(session, serializeToJson(notification));
+
+        } else {
+            // Game not found
+            sendErrorMessage(session, "Error: Game with ID " + command.getGameId() + " does not exist.");
+        }
     }
 
-    public void handleResignCommand(Session session, LeaveGameCommand command) {
 
+    public void handleResignCommand(Session session, ResignGameCommand command, User user) throws DataAccessException {
+        Game game = database.findGame(command.getGameId());
+        if (game != null) {
+            // Check if the user is part of the game
+            if (!Objects.equals(user.username(), game.whiteUsername()) && !Objects.equals(user.username(), game.blackUsername())) {
+                sendErrorMessage(session, "Error: User not part of the game");
+                return;
+            }
+            // Check the state of the game, if the game is already over then you can't resign
+            if (game.isGameOver()) {
+                sendErrorMessage(session, "Error: Game is already over, cannot resign from finished game");
+                return;
+            }
+
+            // Mark the game as over
+            if (Objects.equals(user.username(), game.whiteUsername())) {
+                game = game.setWhite(null);               // Remove the white player
+                game.setState(Game.GameState.BLACK);    // Black wins if White resigns
+            } else {
+                game = game.setBlack(null);               // Remove the black player
+                game.setState(Game.GameState.WHITE);    // White wins if Black resigns
+            }
+
+            // Update the game in the database
+            database.updateGame(game);
+
+            // Prepare and send a notification back to root client
+            String rootNotification = "You have resigned from the game.";
+            NotificationMessage rootNotify = new NotificationMessage(rootNotification);
+            returnMessage(session, serializeToJson(rootNotify));
+
+            // Prepare and send a notification message to all clients
+            String notificationMessage = user.username() + " has resigned from the game.";
+            NotificationMessage notification = new NotificationMessage(notificationMessage);
+            broadcastMessage(serializeToJson(notification), session);
+        } else {
+            // Game not found
+            sendErrorMessage(session, "Error: Game with ID " + command.getGameId() + " does not exist.");
+        }
     }
-
 
 
 
@@ -151,13 +291,15 @@ public class WebSocketHandler {
     // Helper method to broadcast a message to all connected clients except the root client
     public void broadcastMessage(String message, Session rootClientSession) {
         for (Session session : sessions) {
-            if (session.isOpen() && !session.equals(rootClientSession)) {
-                try {
-                    session.getRemote().sendString(message);
-                } catch (IOException e) {
-                    System.err.println("Error sending message: " + e.getMessage());
-                    // Optionally remove the session if it's not valid anymore
-                    sessions.remove(session);
+            if (session.isOpen()) {
+                if (!session.equals(rootClientSession)) {
+                    try {
+                        session.getRemote().sendString(message);
+                    } catch (IOException e) {
+                        System.err.println("Error sending message: " + e.getMessage());
+                        // Optionally remove the session if it's not valid anymore
+                        sessions.remove(session);
+                    }
                 }
             }
         }
@@ -181,6 +323,8 @@ public class WebSocketHandler {
                 .registerTypeAdapter(ChessGame.class, new ChessGameTypeAdapter())
                 .registerTypeAdapter(ChessBoard.class, new ChessBoardTypeAdapter())
                 .registerTypeAdapter(ChessPiece.class, new ChessPieceTypeAdapter())
+                .registerTypeAdapter(ChessMove.class, new ChessMoveTypeAdapter())
+                .registerTypeAdapter(ChessPosition.class, new ChessPositionTypeAdapter())
                 .create();
         return gson.toJson(object);
     }
@@ -190,14 +334,9 @@ public class WebSocketHandler {
                 .registerTypeAdapter(ChessGame.class, new ChessGameTypeAdapter())
                 .registerTypeAdapter(ChessBoard.class, new ChessBoardTypeAdapter())
                 .registerTypeAdapter(ChessPiece.class, new ChessPieceTypeAdapter())
+                .registerTypeAdapter(ChessMove.class, new ChessMoveTypeAdapter())
+                .registerTypeAdapter(ChessPosition.class, new ChessPositionTypeAdapter())
                 .create();
         return gson.fromJson(json, clazz);
     }
-
-    @OnWebSocketError
-    public void onError(Session session, Throwable error) {
-        System.err.println("Error on WebSocket session: " + error.getMessage());
-        // Additional error handling
-    }
-
 }

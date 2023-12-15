@@ -90,6 +90,15 @@ public interface DAOInterface {
      */
     Collection<Game> findAllGames() throws DataAccessException;
 
+
+    /** Update:
+     * A method for updating a given game in the database
+     *
+     * @param game
+     * @throws DataAccessException
+     */
+    public void updateGame(Game game) throws DataAccessException;
+
     /**
      * A method for adding an observer with username to a given game with gameID
      *
@@ -102,6 +111,10 @@ public interface DAOInterface {
 
 
     //AuthToken
+
+    boolean getObserver(int gameID, String username) throws DataAccessException;
+
+    boolean removeObserver(int gameID, String username) throws DataAccessException;
 
     /** Create:
      * A method to create a new token with the given username and adds it to the database

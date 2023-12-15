@@ -184,6 +184,7 @@ public class ChessClient {
     private void logout() {
         if (postLoginFacade.logout(authToken)) {
             System.out.println("Logout successful.");
+            authToken = null;
             currentState = State.LOGGED_OUT;
         } else {
             System.out.println("Logout failed.");
@@ -232,7 +233,6 @@ public class ChessClient {
 
                 ChessGame.TeamColor playerColor = color.equals("WHITE") ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
                 JoinPlayerCommand command = new JoinPlayerCommand(authToken.authToken(), currentGame.gameID(), playerColor);
-                command.setToken(authToken);
                 this.webSocketClient.sendCommand(command);
 
                 String gameName = gameIDToNameMap.get(gameID);
@@ -243,8 +243,6 @@ public class ChessClient {
                 } else if (Objects.equals(color, "BLACK")) {
                     currentState = State.BLACK;                                 // sets the clients state to Black Player
                 }
-                // Now draw the board twice, once with selected color on bottom and once with opposite
-                load(currentGame);
             } else {
                 currentState = State.LOGGED_IN;
                 System.out.println("Failed to join game.");
@@ -267,13 +265,10 @@ public class ChessClient {
                 String gameName = gameIDToNameMap.get(gameID);
                 System.out.println("Joined game '" + gameName + "' as an observer.");
 
-                JoinObserverCommand command = new JoinObserverCommand(authToken.authToken(), currentGame);
-                command.setToken(authToken);
+                JoinObserverCommand command = new JoinObserverCommand(authToken.authToken(), currentGame.gameID());
                 this.webSocketClient.sendCommand(command);
 
-                // Now draw the board twice fixme this may be deleted because the LoadGameMessage coming in should cause the board to be redrawn
-                load(currentGame);                                          // prints board with WHITE orientation
-                currentState = State.OBSERVE;                               // sets the clients state to Observer
+                currentState = State.OBSERVE;                               // sets the clients state to Observe
             } else {
                 currentState = State.LOGGED_IN;
                 System.out.println("Failed to join game as an observer.");
@@ -290,7 +285,6 @@ public class ChessClient {
         // Print the column labels
         printColumnLabels(whiteAtBottom);
 
-        // Print the board rows
         for (int row = 0; row < board.length; row++) {
             // Calculate the actual row index based on the orientation
             int actualRow = whiteAtBottom ? 7 - row : row;
@@ -299,21 +293,26 @@ public class ChessClient {
             System.out.print("\u001b[0m" + (actualRow + 1) + " ");
 
             for (int col = 0; col < board[row].length; col++) {
+                // Calculate the actual column index based on the orientation
+                int actualCol = whiteAtBottom ? col : 7 - col;
+
                 // Determine the background color for the current square
-                String bgColor = ((actualRow + col) % 2 == 0) ? EscapeSequences.SET_BG_COLOR_LIGHT_GREY : EscapeSequences.SET_BG_COLOR_DARK_GREY;
+                String bgColor = ((actualRow + actualCol) % 2 == 0) ? EscapeSequences.SET_BG_COLOR_LIGHT_GREY : EscapeSequences.SET_BG_COLOR_DARK_GREY;
 
                 // Get the piece at the current position
-                ChessPiece piece = board[actualRow][col];
+                ChessPiece piece = board[actualRow][actualCol];
 
-                // Use convertPieceToChar to get the piece character with color
+                // Use convertPieceToSymbol to get the piece character with color
                 String pieceChar = convertPieceToSymbol(piece);
 
                 // Print the square with the piece character and background color
                 System.out.print(bgColor + pieceChar + "\u001b[0m");
             }
+
             // Print the row number at the end and reset the line's styles
             System.out.println("\u001b[0m" + " " + (actualRow + 1));
         }
+
         // Reset the terminal to default and print the column labels again
         System.out.print("\u001b[0m");
         printColumnLabels(whiteAtBottom);
@@ -357,6 +356,7 @@ public class ChessClient {
     /** All gameplay commands, help menu and helper functions are below */
     private void handleGameplayCommands() throws InvalidMoveException {
         System.out.print("Enter gameplay command: ");
+        System.out.print("\n");
         String inputLine = scanner.nextLine();
         String[] inputParts = inputLine.split("\\s+"); // Splitting input by spaces
         String command = inputParts[0].toLowerCase();
@@ -369,7 +369,7 @@ public class ChessClient {
                 load(currentGame);
                 break;
             case "leave":
-                leaveGame();
+                leaveGame(currentGame);
                 break;
             case "legal":
                 if (inputParts.length == 2) {
@@ -379,7 +379,7 @@ public class ChessClient {
                 }
                 break;
             case "resign":
-                resign();
+                resign(currentGame);
                 break;
             case "promotion":
                 if (inputParts.length == 3) {
@@ -439,28 +439,26 @@ public class ChessClient {
     }
 
     public void load(Game game) {
+        currentGame = game;
         if (currentState == State.BLACK) {
-            redrawBoard(game,"BLACK");
+            drawChessBoard(game.game(),false);
         } else {
             if (currentState == State.WHITE) {
-                redrawBoard(game,"WHITE");
+                drawChessBoard(game.game(),true);
             } else {
                 drawChessBoard(game.game(),true);
             }
         }
-        checkGameState();
+        checkGameState(game);
     }
 
-    private void leaveGame() {
-        UserGameCommand command = new LeaveGameCommand(authToken.authToken(), currentGame.gameID());
-        command.setCommandType(UserGameCommand.CommandType.LEAVE);
-        command.setToken(authToken);
+    private void leaveGame(Game game) {
+        UserGameCommand command = new LeaveGameCommand(authToken.authToken(), game.gameID());
         this.webSocketClient.sendCommand(command);
 
+        currentState = State.LOGGED_IN;
         // set the currentGame to null when returning to logged in menu because client is no longer in a current game
         currentGame = null;
-        currentState = State.LOGGED_IN;
-        System.out.println("You have left the game.");
     }
 
     private void showLegalMoves(String startPosition) {
@@ -473,9 +471,13 @@ public class ChessClient {
         int col = startPosition.charAt(0) - 'a' + 1;
         int row = Integer.parseInt(startPosition.substring(1));
 
-        // Create a position object
+        // Create a position object and find the piece at that position
         ChessPosition position = new MyPosition(row, col);
-
+        ChessPiece chessPiece = currentGame.game().getBoard().getPiece(position);
+        if (chessPiece == null) {
+            System.out.println("No piece at that position, no valid moves");
+            return;
+        }
         // Get the valid moves from the current position
         Collection<ChessMove> validMoves = currentGame.game().validMoves(position);
 
@@ -495,7 +497,7 @@ public class ChessClient {
         ChessBoard boardObject = chessGame.getBoard();
         ChessPiece[][] board = boardObject.getBoard();
 
-        // Print the column labels
+        // Print column labels
         printColumnLabels(whiteAtBottom);
 
         // Print the board rows with highlighted legal moves
@@ -507,8 +509,10 @@ public class ChessClient {
             System.out.print("\u001b[0m" + (actualRow + 1) + " ");
 
             for (int col = 0; col < board[row].length; col++) {
+                // Calculate the actual column index based on the orientation
+                int actualCol = whiteAtBottom ? col : 7 - col;
+
                 // Determine if the current position is a valid move
-                int actualCol = col;
                 boolean isLegalMove = validMoves.stream().anyMatch(move ->
                         move.getEndPosition().getRow() == actualRow + 1 &&
                                 move.getEndPosition().getColumn() == actualCol + 1 // Adjusting for 1-based index
@@ -519,7 +523,7 @@ public class ChessClient {
                         ((actualRow + col) % 2 == 0) ? EscapeSequences.SET_BG_COLOR_LIGHT_GREY : EscapeSequences.SET_BG_COLOR_DARK_GREY;
 
                 // Get the piece at the current position
-                ChessPiece piece = board[actualRow][col];
+                ChessPiece piece = board[actualRow][actualCol];
 
                 // Use convertPieceToSymbol to get the piece character with color
                 String pieceChar = convertPieceToSymbol(piece);
@@ -531,34 +535,28 @@ public class ChessClient {
             // Print the row number at the end and reset the line's styles
             System.out.println("\u001b[0m" + " " + (actualRow + 1));
         }
+
         // Reset the terminal to default and print the column labels again
         System.out.print("\u001b[0m");
         printColumnLabels(whiteAtBottom);
         System.out.println("\u001b[0m"); // Reset after printing the board
     }
 
-    private void resign() {
-        UserGameCommand command = new LeaveGameCommand(authToken.authToken(), currentGame.gameID());
-        command.setCommandType(UserGameCommand.CommandType.RESIGN);
-        command.setToken(authToken);
+
+    private void resign(Game game) {
+        UserGameCommand command = new ResignGameCommand(authToken.authToken(), game.gameID());
         this.webSocketClient.sendCommand(command);
+
         currentState = State.LOGGED_IN;
-        System.out.println("You have resigned from the game.");
+        // set the currentGame to null when returning to logged in menu because client is no longer in a current game
+        currentGame = null;
     }
 
-    private void makeMove(String moveString, String promotion) throws InvalidMoveException {
+    private void makeMove(String moveString, String promotion) {
         ChessMove move = parseMoveString(moveString, promotion);
         if (move != null) {
             MoveCommand command = new MoveCommand(authToken.authToken(), move, currentGame.gameID());
-            command.setToken(authToken);
             this.webSocketClient.sendCommand(command);
-
-            // make the move on the current game and check the game state to see if there is check, checkmate or stalemate
-            currentGame.game().makeMove(move);
-
-            // print the board after the move has been made, according to the currentState of the client (not the game)
-            // this also checks the game state
-            load(currentGame);
         } else {
             System.out.println("Invalid move format.");
         }
@@ -593,34 +591,32 @@ public class ChessClient {
         }
     }
 
-    private void checkGameState() {
-        ChessGame.TeamColor teamTurn = currentGame.game().getTeamTurn();
+    private void checkGameState(Game game) {
+        ChessGame.TeamColor teamTurn = game.game().getTeamTurn();
         ChessGame.TeamColor opposingTeam = teamTurn == ChessGame.TeamColor.WHITE ? ChessGame.TeamColor.BLACK : ChessGame.TeamColor.WHITE;
 
-        boolean isCheck = currentGame.game().isInCheck(teamTurn);
-        boolean isCheckmate = currentGame.game().isInCheckmate(teamTurn);
-        boolean isStalemate = currentGame.game().isInStalemate(teamTurn);
+        boolean isCheck = game.game().isInCheck(teamTurn);
+        boolean isCheckmate = game.game().isInCheckmate(teamTurn);
+        boolean isStalemate = game.game().isInStalemate(teamTurn);
 
         String teamTurnName = teamTurn == ChessGame.TeamColor.WHITE ? "White" : "Black";
         String opposingTeamName = opposingTeam == ChessGame.TeamColor.WHITE ? "White" : "Black";
 
         if (isCheckmate) {
             System.out.println("Team " + teamTurnName + " is in checkmate. Team " + opposingTeamName + " has won the game.");
-            Game.GameState state = teamTurn == ChessGame.TeamColor.WHITE ? Game.GameState.BLACK : Game.GameState.WHITE;
-            currentGame.setState(state);
         } else if (isCheck) {
             System.out.println("Team " + teamTurnName + " is in check. They must get out of check.");
         } else if (isStalemate) {
             System.out.println("Team " + teamTurnName + " is in stalemate. No legal moves to make, and the King is not in check. Game is a draw.");
-            currentGame.setState(Game.GameState.DRAW);
         } else {
-            System.out.println("It is " + teamTurnName + "'s turn to move. No one is in check or stalemate");
+            System.out.println("It is " + teamTurnName + "'s turn to move.");
         }
     }
 
     /** All observer commands, help menu and helper functions are below */
     private void handleObserverCommands() {
         System.out.print("Enter observer command: ");
+        System.out.print("\n");
         String inputLine = scanner.nextLine();
         String[] inputParts = inputLine.split("\\s+");
         String command = inputParts[0].toLowerCase();
@@ -664,8 +660,6 @@ public class ChessClient {
     private void leaveObservation() {
         UserGameCommand command = new LeaveGameCommand(authToken.authToken(), currentGame.gameID());
         command.setCommandType(UserGameCommand.CommandType.LEAVE);
-
-        command.setToken(authToken);
         this.webSocketClient.sendCommand(command);
 
         // set the currentGame to null when returning to logged in menu because client is no longer in a current game
@@ -674,8 +668,4 @@ public class ChessClient {
         System.out.println("You have left the game.");
     }
 
-    // Method to print incoming server messages
-    public void onServerMessage(String message) {
-        System.out.println(message);
-    }
 }

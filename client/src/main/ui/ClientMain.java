@@ -15,7 +15,7 @@ public class ClientMain {
             scanner.close();
 
         } catch (Exception e) {
-            System.out.println("Failed to connect to the server");
+            System.out.println("Failed to connect to the server (clientMain) " + e.getMessage());
         }
     }
 }

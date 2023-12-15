@@ -39,24 +39,22 @@ public class WebSocketClient extends Endpoint {
                                 // Handle game loading
                                 LoadGameMessage loadGameMessage = deserializeFromJson(message, LoadGameMessage.class);
                                 if (loadGameMessage != null) {
+                                    System.out.println("Load Game: ");
                                     client.load(loadGameMessage.getGame());
-                                    System.out.println("LOAD_GAME message received");
                                 }
                                 break;
                             case ERROR:
                                 // Handle error message by further deserializing as ErrorMessage
                                 ErrorMessage errorMessage = deserializeFromJson(message, ErrorMessage.class);
                                 if (errorMessage != null) {
-                                    System.out.println(errorMessage.getErrorMessage());
-                                    client.onServerMessage("Error from server: " + errorMessage.getErrorMessage());
+                                    System.out.println("Server error message: " + errorMessage.getErrorMessage());
                                 }
                                 break;
                             case NOTIFICATION:
                                 // Handle notifications
                                 NotificationMessage notificationMessage = deserializeFromJson(message, NotificationMessage.class);
                                 if (notificationMessage != null) {
-                                    System.out.println(notificationMessage.getMessage());
-                                    client.onServerMessage("Error from server: " + notificationMessage.getMessage());
+                                    System.out.println("Server notification message: " + notificationMessage.getMessage());
                                 }
                                 break;
                         }
@@ -68,6 +66,8 @@ public class WebSocketClient extends Endpoint {
                             .registerTypeAdapter(ChessGame.class, new ChessGameTypeAdapter())
                             .registerTypeAdapter(ChessBoard.class, new ChessBoardTypeAdapter())
                             .registerTypeAdapter(ChessPiece.class, new ChessPieceTypeAdapter())
+                            .registerTypeAdapter(ChessMove.class, new ChessMoveTypeAdapter())
+                            .registerTypeAdapter(ChessPosition.class, new ChessPositionTypeAdapter())
                             .create();
                     return gson.fromJson(json, clazz);
                 }
@@ -86,6 +86,8 @@ public class WebSocketClient extends Endpoint {
                 .registerTypeAdapter(ChessGame.class, new ChessGameTypeAdapter())
                 .registerTypeAdapter(ChessBoard.class, new ChessBoardTypeAdapter())
                 .registerTypeAdapter(ChessPiece.class, new ChessPieceTypeAdapter())
+                .registerTypeAdapter(ChessMove.class, new ChessMoveTypeAdapter())
+                .registerTypeAdapter(ChessPosition.class, new ChessPositionTypeAdapter())
                 .create();
         return gson.toJson(object);
     }
@@ -97,5 +99,4 @@ public class WebSocketClient extends Endpoint {
             e.printStackTrace();
         }
     }
-
 }
